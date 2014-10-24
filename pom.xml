@@ -29,26 +29,12 @@
 			<groupId>net.imglib2</groupId>
 			<artifactId>imglib2</artifactId>
 		</dependency>
-		<dependency>
-			<groupId>net.imglib2</groupId>
-			<artifactId>imglib2-roi</artifactId>
-		</dependency>
-
-		<!-- ImageJ dependencies -->
-		<dependency>
-			<groupId>net.imagej</groupId>
-			<artifactId>imagej-common</artifactId>
-		</dependency>
 
 		<!-- Third-party dependencies -->
 		<dependency>
 			<groupId>edu.mines</groupId>
 			<artifactId>mines-jtk</artifactId>
 			<version>20100113</version>
-		</dependency>
-		<dependency>
-			<groupId>gov.nist.math</groupId>
-			<artifactId>jama</artifactId>
 		</dependency>
 
 		<!-- Test dependencies -->
