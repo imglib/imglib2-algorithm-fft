@@ -10,7 +10,7 @@
 	</parent>
 
 	<artifactId>imglib2-algorithm-fft</artifactId>
-	<version>0.1.0-SNAPSHOT</version>
+	<version>0.1.0</version>
 
 	<name>ImgLib2 Algorithms</name>
 	<description>Useful image processing algorithms.</description>
@@ -60,4 +60,8 @@
 		</plugins>
 	</build>
 
+
+  <scm>
+    <tag>imglib2-algorithm-fft-0.1.0</tag>
+  </scm>
 </project>
