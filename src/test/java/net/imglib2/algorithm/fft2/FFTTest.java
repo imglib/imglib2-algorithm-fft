@@ -33,23 +33,105 @@
 
 package net.imglib2.algorithm.fft2;
 
-import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.assertEquals;
+import net.imglib2.Cursor;
+import net.imglib2.FinalDimensions;
+import net.imglib2.Point;
+import net.imglib2.algorithm.region.hypersphere.HyperSphere;
+import net.imglib2.exception.IncompatibleTypeException;
+import net.imglib2.img.Img;
+import net.imglib2.img.ImgFactory;
+import net.imglib2.img.array.ArrayImgFactory;
+import net.imglib2.type.numeric.complex.ComplexFloatType;
+import net.imglib2.type.numeric.real.FloatType;
 
 import org.junit.Test;
+
+import com.carrotsearch.junitbenchmarks.AbstractBenchmark;
 
 /**
  * Tests {@link FFT}.
  * 
  * @author Curtis Rueden
+ * @author Brian Northan
  */
-public class FFTTest
-{
+public class FFTTest extends AbstractBenchmark {
 
+	/**
+	 * Test basic FFT functionality by performing FFT followed by inverse FFT then
+	 * asserting that the original image has been recovered
+	 */
 	@Test
-	public void testFFT()
+	public void testFFT() {
+
+		for (int i = 40; i < 90; i++) {
+			long[] dim = new long[] { i, i, i };
+
+			Img<FloatType> input =
+				new ArrayImgFactory<FloatType>().create(dim, new FloatType());
+			placeSphereInCenter(input);
+
+			ImgFactory<ComplexFloatType> fftImgFactory = null;
+
+			try {
+				fftImgFactory = input.factory().imgFactory(new ComplexFloatType());
+			}
+			catch (IncompatibleTypeException ex) {
+				fftImgFactory = null;
+			}
+
+			Img<ComplexFloatType> fft = FFT.realToComplex(input, fftImgFactory);
+
+			Img<FloatType> inverse =
+				input.factory().create(new FinalDimensions(dim), new FloatType());
+			FFT.complexToRealUnpad(fft, inverse);
+
+			assertImagesEqual(input, inverse, 0.00001f);
+		}
+	}
+
+	/**
+	 * a utility to assert that two images are equal
+	 * 
+	 * @param img1
+	 * @param img2
+	 * @param delta
+	 */
+	protected void assertImagesEqual(Img<FloatType> img1, Img<FloatType> img2,
+		float delta)
 	{
-		// TODO: Write some actual tests. ;-)
-		assertTrue(true);
+		Cursor<FloatType> c1 = img1.cursor();
+		Cursor<FloatType> c2 = img2.cursor();
+
+		while (c1.hasNext()) {
+
+			c1.fwd();
+			c2.fwd();
+
+			// assert that the inverse = the input within the error delta
+			assertEquals(c1.get().getRealFloat(), c2.get().getRealFloat(), delta);
+		}
+
+	}
+
+	/**
+	 * utility that places a sphere in the center of the image
+	 * 
+	 * @param img
+	 */
+	private void placeSphereInCenter(Img<FloatType> img) {
+
+		final Point center = new Point(img.numDimensions());
+
+		for (int d = 0; d < img.numDimensions(); d++)
+			center.setPosition(img.dimension(d) / 2, d);
+
+		HyperSphere<FloatType> hyperSphere =
+			new HyperSphere<FloatType>(img, center, 2);
+
+		for (final FloatType value : hyperSphere) {
+			value.setReal(1);
+		}
 	}
 
 }
