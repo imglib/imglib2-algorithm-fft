@@ -210,8 +210,9 @@ public class FFTMethods {
 	 * 
 	 * @param input - the complex-valued input dataset
 	 * @param output - the real-valued output dataset
-	 * @param interval - if just a subset of the real-values output is required it
-	 *          can be defined here (otherwise it can just be equal to output)
+	 * @param unpaddedInterval - if just a subset of the real-values output is
+	 *          required it can be defined here (otherwise it can just be equal to
+	 *          output)
 	 * @param dim - the dimension to compute the inverse FFT in
 	 * @param scale - define if each pixel is divided by the sum of all pixels in
 	 *          the image
@@ -222,8 +223,9 @@ public class FFTMethods {
 	 */
 	final public static <C extends ComplexType<C>, R extends RealType<R>> boolean
 		complexToReal(final RandomAccessibleInterval<C> input,
-			final RandomAccessibleInterval<R> output, final Interval interval,
-			final int dim, final boolean scale, final ExecutorService service)
+			final RandomAccessibleInterval<R> output,
+			final Interval unpaddedInterval, final int dim, final boolean scale,
+			final ExecutorService service)
 	{
 		final int numDimensions = input.numDimensions();
 
@@ -316,14 +318,14 @@ public class FFTMethods {
 										// interval,
 										// then we do not have to compute the
 										// inverse fft here
-										if (fakeSize[countDim] < interval.min(d) ||
-											fakeSize[countDim] > interval.max(d)) continue A;
+										if (fakeSize[countDim] < unpaddedInterval.min(d) ||
+											fakeSize[countDim] > unpaddedInterval.max(d)) continue A;
 
 										cursorInPosition[d] =
 											fakeSize[countDim] + (int) input.min(d);
 										cursorOutPosition[d] =
 											fakeSize[countDim] + (int) output.min(d) -
-												(int) interval.min(d);
+												(int) unpaddedInterval.min(d);
 										++countDim;
 									}
 								}
@@ -339,7 +341,7 @@ public class FFTMethods {
 								// compute the FFT along the 1d vector and write
 								// it into the output
 								computeComplexToReal1dFFT(fft, randomAccessIn, randomAccessOut,
-									interval, dim, tempIn, tempOut, scale);
+									unpaddedInterval, dim, tempIn, tempOut, scale);
 							}
 						}
 
@@ -381,7 +383,7 @@ public class FFTMethods {
 			randomAccessOut.setPosition((int) output.min(0), 0);
 
 			// compute the FFT along the 1d vector and write it into the output
-			computeComplexToReal1dFFT(fft, randomAccessIn, randomAccessOut, interval,
+			computeComplexToReal1dFFT(fft, randomAccessIn, randomAccessOut, unpaddedInterval,
 				0, tempIn, tempOut, scale);
 		}
 
