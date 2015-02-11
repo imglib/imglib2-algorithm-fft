@@ -12,8 +12,8 @@
 	<artifactId>imglib2-algorithm-fft</artifactId>
 	<version>0.1.2-SNAPSHOT</version>
 
-	<name>ImgLib2 Algorithms</name>
-	<description>Useful image processing algorithms.</description>
+	<name>ImgLib2 Algorithms: FFT</name>
+	<description>Image processing algorithms related to Fast Fourier Transforms.</description>
 
 	<repositories>
 		<!-- NB: for SciJava dependencies -->
