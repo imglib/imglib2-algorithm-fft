@@ -966,7 +966,7 @@ public class FFTMethods {
 		// int)
 
 		// unpack for the case where real size is even
-		if (realSize % 2 == 0) {
+		if ((realSize&1)==0) {
 			// if the real size is even the fft (a) will be packed as follows
 			// a[offa+2*k] = Re[k], 0<=k<n/2
 			// a[offa+2*k+1] = Im[k], 0<k<n/2
@@ -1053,7 +1053,7 @@ public class FFTMethods {
 		// int)
 
 		// pack for the even real
-		if (realSize % 2 == 0) {
+		if ((realSize&1)==0) {
 
 			temp[0] = randomAccessIn.get().getRealFloat();
 			randomAccessIn.fwd(0);
