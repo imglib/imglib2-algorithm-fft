@@ -108,9 +108,9 @@ public class FFTTest {
 	@Test
 	public void testJTransformVsMines() {
 		
-		int trials=1000;
+		int trials=100;
 
-		for (int i = 50; i < 1048; i++) {
+		for (int i = 950; i < 1048; i++) {
 
 			Dimensions unpaddedDimensions = new FinalDimensions(new long[] { i, i });
 
@@ -204,12 +204,12 @@ public class FFTTest {
 	@Test
 	public void testFFTMethodsVsJTransformAPIBenchmark() {
 
-		int startSize = 90;
-		int finishSize = 110;
+		int startSize = 950;
+		int finishSize = 1050;
 		int incr=1;
 		
 		// number of trials to perform for each size
-		int trials = 1000;
+		int trials = 100000;
 		
 		// a list of sizes for which jTransform is faster
 		ArrayList<Integer> jTransformFaster=new ArrayList<Integer>();
