@@ -2,12 +2,11 @@
  * #%L
  * ImgLib2: a general-purpose, multidimensional image processing library.
  * %%
- * Copyright (C) 2009 - 2016 Tobias Pietzsch, Stephan Preibisch, Stephan Saalfeld,
- * John Bogovic, Albert Cardona, Barry DeZonia, Christian Dietz, Jan Funke,
- * Aivar Grislis, Jonathan Hale, Grant Harris, Stefan Helfrich, Mark Hiner,
- * Martin Horn, Steffen Jaensch, Lee Kamentsky, Larry Lindsey, Melissa Linkert,
- * Mark Longair, Brian Northan, Nick Perry, Curtis Rueden, Johannes Schindelin,
- * Jean-Yves Tinevez and Michael Zinsmaier.
+ * Copyright (C) 2009 - 2014 Stephan Preibisch, Tobias Pietzsch, Barry DeZonia,
+ * Stephan Saalfeld, Albert Cardona, Curtis Rueden, Christian Dietz, Jean-Yves
+ * Tinevez, Johannes Schindelin, Lee Kamentsky, Larry Lindsey, Grant Harris,
+ * Mark Hiner, Aivar Grislis, Martin Horn, Nick Perry, Michael Zinsmaier,
+ * Steffen Jaensch, Jan Funke, Mark Longair, and Dimiter Prodanov.
  * %%
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are met:
@@ -32,7 +31,7 @@
  * #L%
  */
 
-package net.imglib2.algorithm.fft2;
+package net.imglib2.algorithm.fft2.mines;
 
 import java.util.ArrayList;
 import java.util.concurrent.Callable;
@@ -42,7 +41,6 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 import java.util.concurrent.atomic.AtomicInteger;
 
-import net.imglib2.algorithm.fft2.NextSmoothNumber;
 import net.imglib2.Dimensions;
 import net.imglib2.FinalInterval;
 import net.imglib2.Interval;
@@ -52,8 +50,8 @@ import net.imglib2.iterator.LocalizingZeroMinIntervalIterator;
 import net.imglib2.type.numeric.ComplexType;
 import net.imglib2.type.numeric.RealType;
 import net.imglib2.view.Views;
-
-import org.jtransforms.fft.FloatFFT_1D;
+import edu.mines.jtk.dsp.FftComplex;
+import edu.mines.jtk.dsp.FftReal;
 
 /**
  * Compute a FFT transform, either real-to-complex or complex-to-complex, or
@@ -62,7 +60,6 @@ import org.jtransforms.fft.FloatFFT_1D;
  * arrays.
  * 
  * @author Stephan Preibisch (stephan.preibisch@gmx.de)
- * @author Brian Northan (bnorthan@gmail.com)
  */
 public class FFTMethods {
 
@@ -213,9 +210,8 @@ public class FFTMethods {
 	 * 
 	 * @param input - the complex-valued input dataset
 	 * @param output - the real-valued output dataset
-	 * @param unpaddedInterval - if just a subset of the real-values output is
-	 *          required it can be defined here (otherwise it can just be equal to
-	 *          output)
+	 * @param interval - if just a subset of the real-values output is required it
+	 *          can be defined here (otherwise it can just be equal to output)
 	 * @param dim - the dimension to compute the inverse FFT in
 	 * @param scale - define if each pixel is divided by the sum of all pixels in
 	 *          the image
@@ -226,9 +222,8 @@ public class FFTMethods {
 	 */
 	final public static <C extends ComplexType<C>, R extends RealType<R>> boolean
 		complexToReal(final RandomAccessibleInterval<C> input,
-			final RandomAccessibleInterval<R> output,
-			final Interval unpaddedInterval, final int dim, final boolean scale,
-			final ExecutorService service)
+			final RandomAccessibleInterval<R> output, final Interval interval,
+			final int dim, final boolean scale, final ExecutorService service)
 	{
 		final int numDimensions = input.numDimensions();
 
@@ -242,7 +237,6 @@ public class FFTMethods {
 		for (int d = 0; d < numDimensions; ++d)
 			inputSize[d] = (int) input.dimension(d);
 
-		// size of the input in the dimension that is being processed
 		final int complexSize = inputSize[dim];
 		final int realSize = (complexSize - 1) * 2;
 
@@ -267,9 +261,10 @@ public class FFTMethods {
 						final int myNumber = ai.getAndIncrement();
 
 						// the temporary 1-d arrays for the inverse fft
-						final float[] temp = new float[realSize];
+						final float[] tempIn = new float[complexSize * 2];
+						final float[] tempOut = new float[realSize];
 
-						final FloatFFT_1D fft = new FloatFFT_1D(realSize);
+						final FftReal fft = new FftReal(realSize);
 
 						final RandomAccess<C> randomAccessIn = input.randomAccess();
 						final RandomAccess<R> randomAccessOut = output.randomAccess();
@@ -321,14 +316,14 @@ public class FFTMethods {
 										// interval,
 										// then we do not have to compute the
 										// inverse fft here
-										if (fakeSize[countDim] < unpaddedInterval.min(d) ||
-											fakeSize[countDim] > unpaddedInterval.max(d)) continue A;
+										if (fakeSize[countDim] < interval.min(d) ||
+											fakeSize[countDim] > interval.max(d)) continue A;
 
 										cursorInPosition[d] =
 											fakeSize[countDim] + (int) input.min(d);
 										cursorOutPosition[d] =
 											fakeSize[countDim] + (int) output.min(d) -
-												(int) unpaddedInterval.min(d);
+												(int) interval.min(d);
 										++countDim;
 									}
 								}
@@ -344,7 +339,7 @@ public class FFTMethods {
 								// compute the FFT along the 1d vector and write
 								// it into the output
 								computeComplexToReal1dFFT(fft, randomAccessIn, randomAccessOut,
-									unpaddedInterval, dim, temp, scale);
+									interval, dim, tempIn, tempOut, scale);
 							}
 						}
 
@@ -370,9 +365,10 @@ public class FFTMethods {
 		}
 		else {
 			// the temporary 1-d arrays for the fft
-			final float[] temp = new float[realSize];
+			final float[] tempIn = new float[complexSize * 2];
+			final float[] tempOut = new float[realSize];
 
-			final FloatFFT_1D fft = new FloatFFT_1D(realSize);
+			final FftReal fft = new FftReal(realSize);
 
 			final RandomAccess<C> randomAccessIn = input.randomAccess();
 			final RandomAccess<R> randomAccessOut = output.randomAccess();
@@ -385,8 +381,8 @@ public class FFTMethods {
 			randomAccessOut.setPosition((int) output.min(0), 0);
 
 			// compute the FFT along the 1d vector and write it into the output
-			computeComplexToReal1dFFT(fft, randomAccessIn, randomAccessOut,
-				unpaddedInterval, 0, temp, scale);
+			computeComplexToReal1dFFT(fft, randomAccessIn, randomAccessOut, interval,
+				0, tempIn, tempOut, scale);
 		}
 
 		return true;
@@ -402,7 +398,7 @@ public class FFTMethods {
 	 * @param output - the complex-valued output dataset
 	 * @param dim - the dimension to compute the FFT in
 	 * @return - true if successful, false if the dimensions of input and output
-	 *         are not compatible
+	 *         are not compatible, i.e. not supported by the edu_mines_jtk 1d fft
 	 */
 	final public static <R extends RealType<R>, C extends ComplexType<C>> boolean
 		realToComplex(final RandomAccessibleInterval<R> input,
@@ -423,7 +419,7 @@ public class FFTMethods {
 	 *          it can be defined here (otherwise it can just be equal to output)
 	 * @param dim - the dimension to compute the FFT in
 	 * @return - true if successful, false if the dimensions of input and output
-	 *         are not compatible
+	 *         are not compatible, i.e. not supported by the edu_mines_jtk 1d fft
 	 */
 	final public static <R extends RealType<R>, C extends ComplexType<C>> boolean
 		realToComplex(final RandomAccessibleInterval<R> input,
@@ -444,7 +440,7 @@ public class FFTMethods {
 	 * @param scale - define if each pixel is divided by the sum of all pixels in
 	 *          the image
 	 * @return - true if successful, false if the dimensions of input and output
-	 *         are not compatible
+	 *         are not compatible, i.e. not supported by the edu_mines_jtk 1d fft
 	 */
 	final public static <R extends RealType<R>, C extends ComplexType<C>> boolean
 		realToComplex(final RandomAccessibleInterval<R> input,
@@ -467,7 +463,7 @@ public class FFTMethods {
 	 * @param scale - define if each pixel is divided by the sum of all pixels in
 	 *          the image
 	 * @return - true if successful, false if the dimensions of input and output
-	 *         are not compatible
+	 *         are not compatible, i.e. not supported by the edu_mines_jtk 1d fft
 	 */
 	final public static <R extends RealType<R>, C extends ComplexType<C>> boolean
 		realToComplex(final RandomAccessibleInterval<R> input,
@@ -490,7 +486,7 @@ public class FFTMethods {
 	 *          the image
 	 * @param nThreads - number of threads to utilize
 	 * @return - true if successful, false if the dimensions of input and output
-	 *         are not compatible
+	 *         are not compatible, i.e. not supported by the edu_mines_jtk 1d fft
 	 */
 	final public static <R extends RealType<R>, C extends ComplexType<C>> boolean
 		realToComplex(final RandomAccessibleInterval<R> input,
@@ -514,7 +510,7 @@ public class FFTMethods {
 	 *          the image
 	 * @param nThreads - number of threads to utilize
 	 * @return - true if successful, false if the dimensions of input and output
-	 *         are not compatible
+	 *         are not compatible, i.e. not supported by the edu_mines_jtk 1d fft
 	 */
 	final public static <R extends RealType<R>, C extends ComplexType<C>> boolean
 		realToComplex(final RandomAccessibleInterval<R> input,
@@ -539,7 +535,7 @@ public class FFTMethods {
 	 *          the image
 	 * @param service - service providing threads for multi-threading
 	 * @return - true if successful, false if the dimensions of input and output
-	 *         are not compatible
+	 *         are not compatible, i.e. not supported by the edu_mines_jtk 1d fft
 	 */
 	final public static <R extends RealType<R>, C extends ComplexType<C>> boolean
 		realToComplex(final RandomAccessibleInterval<R> input,
@@ -563,7 +559,7 @@ public class FFTMethods {
 	 * @param service - service providing threads for multi-threading (if numDims
 	 *          > 1)
 	 * @return - true if successful, false if the dimensions of input and output
-	 *         are not compatible
+	 *         are not compatible, i.e. not supported by the edu_mines_jtk 1d fft
 	 */
 	final public static <R extends RealType<R>, C extends ComplexType<C>> boolean
 		realToComplex(final RandomAccessibleInterval<R> input,
@@ -604,9 +600,10 @@ public class FFTMethods {
 						final int myNumber = ai.getAndIncrement();
 
 						// the temporary 1-d arrays for the fft
-						final float[] temp = new float[realSize];
+						final float[] tempIn = new float[realSize];
+						final float[] tempOut = new float[complexSize * 2];
 
-						final FloatFFT_1D fft = new FloatFFT_1D(realSize);
+						final FftReal fft = new FftReal(realSize);
 
 						final RandomAccess<R> randomAccessIn = input.randomAccess();
 						final RandomAccess<C> randomAccessOut = output.randomAccess();
@@ -681,7 +678,7 @@ public class FFTMethods {
 								// compute the FFT along the 1d vector and write
 								// it into the output
 								computeRealToComplex1dFFT(fft, randomAccessIn, randomAccessOut,
-									interval, dim, temp, scale);
+									interval, dim, tempIn, tempOut, scale);
 							}
 						}
 						return null;
@@ -707,9 +704,10 @@ public class FFTMethods {
 			// if only one dimension exists, multithreading makes no sense here
 
 			// the temporary 1-d arrays for the fft
-			final float[] temp = new float[realSize];
+			final float[] tempIn = new float[realSize];
+			final float[] tempOut = new float[complexSize * 2];
 
-			final FloatFFT_1D fft = new FloatFFT_1D(realSize);
+			final FftReal fft = new FftReal(realSize);
 
 			final RandomAccess<R> randomAccessIn = input.randomAccess();
 			final RandomAccess<C> randomAccessOut = output.randomAccess();
@@ -723,7 +721,7 @@ public class FFTMethods {
 
 			// compute the FFT along the 1d vector and write it into the output
 			computeRealToComplex1dFFT(fft, randomAccessIn, randomAccessOut, interval,
-				0, temp, scale);
+				0, tempIn, tempOut, scale);
 		}
 		return true;
 	}
@@ -743,7 +741,7 @@ public class FFTMethods {
 	 * @param forward - true means forward FFT transform, false means inverse FFT
 	 *          transform
 	 * @return - true if successful, false if the dimensionality of the dataset is
-	 *         not supported
+	 *         not supported by the edu_mines_jtk 1d fft
 	 */
 	final public static <C extends ComplexType<C>> boolean
 		complexToComplex(final RandomAccessibleInterval<C> data, final int dim,
@@ -765,7 +763,7 @@ public class FFTMethods {
 	 * @param scale - define if each pixel is divided by the sum of all pixels in
 	 *          the image
 	 * @return - true if successful, false if the dimensionality of the dataset is
-	 *         not supported
+	 *         not supported by the edu_mines_jtk 1d fft
 	 */
 	final public static <C extends ComplexType<C>> boolean complexToComplex(
 		final RandomAccessibleInterval<C> data, final int dim,
@@ -793,7 +791,7 @@ public class FFTMethods {
 	 * @param service - service providing threads for multi-threading (if numDims
 	 *          > 1)
 	 * @return - true if successful, false if the dimensionality of the dataset is
-	 *         not supported by the fft
+	 *         not supported by the edu_mines_jtk 1d fft
 	 */
 	final public static <C extends ComplexType<C>> boolean complexToComplex(
 		final RandomAccessibleInterval<C> data, final int dim,
@@ -833,9 +831,10 @@ public class FFTMethods {
 						final int myNumber = ai.getAndIncrement();
 
 						// the temporary 1-d arrays for the fft
-						final float[] temp = new float[size * 2];
+						final float[] tempIn = new float[size * 2];
+						final float[] tempOut = new float[size * 2];
 
-						final FloatFFT_1D fft = new FloatFFT_1D(size);
+						final FftComplex fft = new FftComplex(size);
 
 						final RandomAccess<C> randomAccess = data.randomAccess();
 
@@ -887,7 +886,7 @@ public class FFTMethods {
 								// compute the FFT along the 1d vector and write
 								// it into the output
 								computeComplexToComplex1dFFT(fft, forward, randomAccess, dim,
-									temp, scale);
+									tempIn, tempOut, scale);
 							}
 						}
 						return null;
@@ -912,9 +911,10 @@ public class FFTMethods {
 			// if only one dimension exists, multithreading makes no sense here
 
 			// the temporary 1-d arrays for the fft
-			final float[] temp = new float[size * 2];
+			final float[] tempIn = new float[size * 2];
+			final float[] tempOut = new float[size * 2];
 
-			final FloatFFT_1D fft = new FloatFFT_1D(size);
+			final FftComplex fft = new FftComplex(size);
 
 			final RandomAccess<C> randomAccess = data.randomAccess();
 
@@ -922,28 +922,34 @@ public class FFTMethods {
 			randomAccess.setPosition((int) data.min(0), 0);
 
 			// compute the FFT along the 1d vector and write it into the output
-			computeComplexToComplex1dFFT(fft, forward, randomAccess, dim, temp, scale);
+			computeComplexToComplex1dFFT(fft, forward, randomAccess, dim, tempIn,
+				tempOut, scale);
 		}
 
 		return true;
 	}
 
 	final private static <R extends RealType<R>, C extends ComplexType<C>> void
-		computeRealToComplex1dFFT(final FloatFFT_1D fft,
+		computeRealToComplex1dFFT(final FftReal fft,
 			final RandomAccess<R> randomAccessIn,
 			final RandomAccess<C> randomAccessOut, final Interval range,
-			final int dim, final float[] temp, final boolean scale)
+			final int dim, final float[] tempIn, final float[] tempOut,
+			final boolean scale)
 	{
-		final int realSize = temp.length;
+		final int realSize = tempIn.length;
+		final int complexSize = tempOut.length / 2;
+		final int realMax = realSize - 1;
+		final int complexMax = complexSize - 1;
 
 		// fill the input array with image data
-		for (int i = 0; i < realSize; ++i) {
-			temp[i] = randomAccessIn.get().getRealFloat();
+		for (int i = 0; i < realMax; ++i) {
+			tempIn[i] = randomAccessIn.get().getRealFloat();
 			randomAccessIn.fwd(dim);
 		}
+		tempIn[realMax] = randomAccessIn.get().getRealFloat();
 
 		// compute the fft in dimension dim ( real -> complex )
-		fft.realForward(temp);
+		fft.realToComplex(-1, tempIn, tempOut);
 
 		// write back the fft data
 
@@ -953,176 +959,103 @@ public class FFTMethods {
 
 		if (range == null) {
 			min = 0;
-			max = realSize / 2;
+			max = complexMax;
 		}
 		else {
 			min = (int) range.min(dim);
 			max = (int) range.max(dim);
 		}
 
-		// The fft result needs to be unpacked properly
-		// The packing scheme is slightly different between odd and even real sizes.
-		// See JTransfrom documentation...
-		// http://incanter.org/docs/parallelcolt/api/edu/emory/mathcs/jtransforms/fft/FloatFFT_1D.html#realForward(float[],
-		// int)
+		final int complexMax2 = max * 2;
 
-		// unpack for the case where real size is even
-		if ((realSize&1)==0) {
-			// if the real size is even the fft (a) will be packed as follows
-			// a[offa+2*k] = Re[k], 0<=k<n/2
-			// a[offa+2*k+1] = Im[k], 0<k<n/2
-			// a[offa+1] = Re[n/2]
+		if (scale) {
+			for (int i = min; i < max; ++i) {
+				final int j = i * 2;
 
-			if (scale) {
-
-				randomAccessOut.get().setComplexNumber(temp[0] / realSize, 0);
+				randomAccessOut.get().setComplexNumber(tempOut[j] / realSize,
+					tempOut[j + 1] / realSize);
 				randomAccessOut.fwd(dim);
-
-				for (int i = min + 1; i < max; ++i) {
-					final int j = i * 2;
-
-					randomAccessOut.get().setComplexNumber(temp[j] / realSize,
-						temp[j + 1] / realSize);
-					randomAccessOut.fwd(dim);
-				}
-				randomAccessOut.get().setComplexNumber(temp[1] / realSize, 0);
 			}
-			else {
-
-				randomAccessOut.get().setComplexNumber(temp[0], 0);
-				randomAccessOut.fwd(dim);
-
-				for (int i = min + 1; i < max; ++i) {
-					final int j = i * 2;
-
-					randomAccessOut.get().setComplexNumber(temp[j], temp[j + 1]);
-					randomAccessOut.fwd(dim);
-				}
-				randomAccessOut.get().setComplexNumber(temp[1], 0);
-			}
+			randomAccessOut.get().setComplexNumber(tempOut[complexMax2] / realSize,
+				tempOut[complexMax2 + 1] / realSize);
 		}
-		// unpack for the case where the real size is odd
 		else {
-			// if the real size is even the fft (a) will be packed as follows
-			// a[offa+2*k] = Re[k], 0<=k<(n+1)/2
-			// a[offa+2*k+1] = Im[k], 0<k<(n-1)/2
-			// a[offa+1] = Im[(n-1)/2]
-			if (scale) {
+			for (int i = min; i < max; ++i) {
+				final int j = i * 2;
 
-				randomAccessOut.get().setComplexNumber(temp[0] / realSize, 0);
+				randomAccessOut.get().setComplexNumber(tempOut[j], tempOut[j + 1]);
 				randomAccessOut.fwd(dim);
-
-				for (int i = min + 1; i < max; ++i) {
-					final int j = i * 2;
-
-					randomAccessOut.get().setComplexNumber(temp[j] / realSize,
-						temp[j + 1] / realSize);
-					randomAccessOut.fwd(dim);
-				}
-				randomAccessOut.get().setComplexNumber(temp[max * 2] / realSize,
-					temp[1] / realSize);
 			}
-			else {
-				randomAccessOut.get().setComplexNumber(temp[0], 0);
-				randomAccessOut.fwd(dim);
-
-				for (int i = min + 1; i < max; ++i) {
-					final int j = i * 2;
-
-					randomAccessOut.get().setComplexNumber(temp[j], temp[j + 1]);
-					randomAccessOut.fwd(dim);
-				}
-				randomAccessOut.get().setComplexNumber(temp[max * 2], temp[1]);
-			}
+			randomAccessOut.get().setComplexNumber(tempOut[complexMax2],
+				tempOut[complexMax2 + 1]);
 		}
-
 	}
 
 	final private static <C extends ComplexType<C>, R extends RealType<R>> void
-		computeComplexToReal1dFFT(final FloatFFT_1D fft,
+		computeComplexToReal1dFFT(final FftReal fft,
 			final RandomAccess<C> randomAccessIn,
 			final RandomAccess<R> randomAccessOut, final Interval range,
-			final int dim, final float[] temp, final boolean scale)
+			final int dim, final float[] tempIn, final float[] tempOut,
+			final boolean scale)
 	{
-		final int complexSize = temp.length / 2 + 1;
-		final int realSize = temp.length;
+		final int complexSize = tempIn.length / 2;
+		final int realSize = tempOut.length;
+		final int complexMax = complexSize - 1;
+		final int realMax = realSize - 1;
+		final int complexMax2 = complexMax * 2;
 
-		// The fft needs to be packed properly before calling the inverse transform
-		// The packing scheme is slightly different between odd and even real sizes.
-		// See JTransfrom documentation...
-		// http://incanter.org/docs/parallelcolt/api/edu/emory/mathcs/jtransforms/fft/FloatFFT_1D.html#realForward(float[],
-		// int)
+		// get the input data
+		// fill the input array with complex image data
+		for (int i = 0; i < complexMax; ++i) {
+			final int j = i * 2;
 
-		// pack for the even real
-		if ((realSize&1)==0) {
-
-			temp[0] = randomAccessIn.get().getRealFloat();
+			tempIn[j] = randomAccessIn.get().getRealFloat();
+			tempIn[j + 1] = randomAccessIn.get().getImaginaryFloat();
 			randomAccessIn.fwd(0);
-
-			// get the input data
-			// fill the input array with complex image data
-			for (int i = 1; i < complexSize - 1; ++i) {
-				final int j = i * 2;
-
-				temp[j] = randomAccessIn.get().getRealFloat();
-				temp[j + 1] = randomAccessIn.get().getImaginaryFloat();
-				randomAccessIn.fwd(0);
-			}
-
-			temp[1] = randomAccessIn.get().getRealFloat();
 		}
-		// pack for odd real
-		else {
-
-			temp[0] = randomAccessIn.get().getRealFloat();
-			randomAccessIn.fwd(0);
-
-			int j = 0;
-			// get the input data
-			// fill the input array with complex image data
-			for (int i = 1; i < complexSize - 1; ++i) {
-				j = i * 2;
-
-				temp[j] = randomAccessIn.get().getRealFloat();
-				temp[j + 1] = randomAccessIn.get().getImaginaryFloat();
-				randomAccessIn.fwd(0);
-			}
-			temp[realSize - 1] = randomAccessIn.get().getRealFloat();
-			temp[1] = randomAccessIn.get().getImaginaryFloat();
-
-		}
+		tempIn[complexMax2] = randomAccessIn.get().getRealFloat();
+		tempIn[complexMax2 + 1] = randomAccessIn.get().getImaginaryFloat();
 
 		// compute the fft in dimension 0 ( complex -> real )
-		fft.realInverse(temp, scale);
+		fft.complexToReal(1, tempIn, tempOut);
 
-		// write back the data checking if only a certain portion of the data is
-		// desired (maybe if
+		// write back the real data
+
+		// check if only a certain portion of the data is desired (maybe if
 		// windowing was applied that should undone)
 		final int min, max;
 
 		if (range == null) {
 			min = 0;
-			max = realSize;
+			max = realMax;
 		}
 		else {
 			min = (int) range.min(dim);
 			max = (int) range.max(dim);
 		}
 
-		for (int x = min; x < max; ++x) {
-			randomAccessOut.get().setReal(temp[x]);
-			randomAccessOut.fwd(0);
+		if (scale) {
+			for (int x = min; x < max; ++x) {
+				randomAccessOut.get().setReal(tempOut[x] / realSize);
+				randomAccessOut.fwd(0);
+			}
+			randomAccessOut.get().setReal(tempOut[max] / realSize);
 		}
-		randomAccessOut.get().setReal(temp[max]);
-
+		else {
+			for (int x = min; x < max; ++x) {
+				randomAccessOut.get().setReal(tempOut[x]);
+				randomAccessOut.fwd(0);
+			}
+			randomAccessOut.get().setReal(tempOut[max]);
+		}
 	}
 
 	final private static <C extends ComplexType<C>> void
-		computeComplexToComplex1dFFT(final FloatFFT_1D fft, final boolean forward,
-			final RandomAccess<C> randomAccess, final int dim, final float[] temp,
-			final boolean scale)
+		computeComplexToComplex1dFFT(final FftComplex fft, final boolean forward,
+			final RandomAccess<C> randomAccess, final int dim, final float[] tempIn,
+			final float[] tempOut, final boolean scale)
 	{
-		final int size = temp.length / 2;
+		final int size = tempIn.length / 2;
 		final int max = size - 1;
 		final int max2 = max * 2;
 
@@ -1130,28 +1063,41 @@ public class FFTMethods {
 		for (int i = 0; i < max; ++i) {
 			final int j = i * 2;
 
-			temp[j] = randomAccess.get().getRealFloat();
-			temp[j + 1] = randomAccess.get().getImaginaryFloat();
+			tempIn[j] = randomAccess.get().getRealFloat();
+			tempIn[j + 1] = randomAccess.get().getImaginaryFloat();
 			randomAccess.fwd(dim);
 		}
-		temp[max2] = randomAccess.get().getRealFloat();
-		temp[max2 + 1] = randomAccess.get().getImaginaryFloat();
+		tempIn[max2] = randomAccess.get().getRealFloat();
+		tempIn[max2 + 1] = randomAccess.get().getImaginaryFloat();
 
 		// compute the fft in dimension dim (complex -> complex)
-		if (forward) fft.complexForward(temp);
-		else fft.complexInverse(temp, scale);
+		if (forward) fft.complexToComplex(-1, tempIn, tempOut);
+		else fft.complexToComplex(1, tempIn, tempOut);
 
 		// move the randomAccess back
 		randomAccess.move(-max, dim);
 
 		// write back result
-		for (int i = 0; i < max; ++i) {
-			final int j = i * 2;
+		if (scale) {
+			for (int i = 0; i < max; ++i) {
+				final int j = i * 2;
 
-			randomAccess.get().setComplexNumber(temp[j], temp[j + 1]);
-			randomAccess.fwd(dim);
+				randomAccess.get().setComplexNumber(tempOut[j] / size,
+					tempOut[j + 1] / size);
+				randomAccess.fwd(dim);
+			}
+			randomAccess.get().setComplexNumber(tempOut[max2] / size,
+				tempOut[max2 + 1] / size);
 		}
-		randomAccess.get().setComplexNumber(temp[max2], temp[max2 + 1]);
+		else {
+			for (int i = 0; i < max; ++i) {
+				final int j = i * 2;
+
+				randomAccess.get().setComplexNumber(tempOut[j], tempOut[j + 1]);
+				randomAccess.fwd(dim);
+			}
+			randomAccess.get().setComplexNumber(tempOut[max2], tempOut[max2 + 1]);
+		}
 	}
 
 	/**
@@ -1209,11 +1155,7 @@ public class FFTMethods {
 		final long[] max = new long[fftDimensions.numDimensions()];
 
 		// first dimension is different as its size changes
-		// final long realSize = (fftDimensions.dimension(0) - 1) * 2 +1;
-
-		final int complexSize = (int) fftDimensions.dimension(0);
-		final int realSize = (complexSize - 1) * 2;
-
+		final long realSize = (fftDimensions.dimension(0) - 1) * 2;
 		long difference = realSize - originalDimensions.dimension(0);
 
 		min[0] = fftDimensions.min(0) + difference / 2;
@@ -1249,13 +1191,15 @@ public class FFTMethods {
 		final int d0 = ((int) inputDimensions.dimension(0) - 1) * 2;
 
 		// compute which dimensionality we could get from that
-		paddedDimensions[0] = d0 / 2 + 1;
+		paddedDimensions[0] = FftReal.nfftSmall(d0) / 2 + 1;
 
 		// and which final dimensionality this will give in real space
 		realSize[0] = (paddedDimensions[0] - 1) * 2;
 
 		for (int d = 1; d < inputDimensions.numDimensions(); ++d)
-			realSize[d] = paddedDimensions[d] = ((int) inputDimensions.dimension(d));
+			realSize[d] =
+				paddedDimensions[d] =
+					FftComplex.nfftSmall((int) inputDimensions.dimension(d));
 	}
 
 	/**
@@ -1277,7 +1221,7 @@ public class FFTMethods {
 		final int d0 = ((int) inputDimensions.dimension(0) - 1) * 2;
 
 		// compute which dimensionality we could get from that
-		paddedDimensions[0] = NextSmoothNumber.nextSmooth(d0) / 2 + 1;
+		paddedDimensions[0] = FftReal.nfftFast(d0) / 2 + 1;
 
 		// and which final dimensionality this will give in real space
 		realSize[0] = (paddedDimensions[0] - 1) * 2;
@@ -1285,7 +1229,7 @@ public class FFTMethods {
 		for (int d = 1; d < inputDimensions.numDimensions(); ++d)
 			realSize[d] =
 				paddedDimensions[d] =
-					NextSmoothNumber.nextSmooth((int) inputDimensions.dimension(d));
+					FftComplex.nfftFast((int) inputDimensions.dimension(d));
 	}
 
 	/**
@@ -1335,13 +1279,13 @@ public class FFTMethods {
 		final Dimensions inputDimensions, final long[] paddedDimensions,
 		final long[] fftDimensions)
 	{
-		paddedDimensions[0] = nfftFast((int) inputDimensions.dimension(0));
+		paddedDimensions[0] = FftReal.nfftFast((int) inputDimensions.dimension(0));
 		fftDimensions[0] = (paddedDimensions[0] / 2 + 1);
 
 		for (int d = 1; d < inputDimensions.numDimensions(); ++d)
 			fftDimensions[d] =
 				paddedDimensions[d] =
-					NextSmoothNumber.nextSmooth((int) inputDimensions.dimension(d));
+					FftComplex.nfftFast((int) inputDimensions.dimension(d));
 	}
 
 	/**
@@ -1359,12 +1303,13 @@ public class FFTMethods {
 		final Dimensions inputDimensions, final long[] paddedDimensions,
 		final long[] fftDimensions)
 	{
-		paddedDimensions[0] = nfftSmall((int) inputDimensions.dimension(0));
+		paddedDimensions[0] = FftReal.nfftSmall((int) inputDimensions.dimension(0));
 		fftDimensions[0] = (paddedDimensions[0] / 2 + 1);
 
 		for (int d = 1; d < inputDimensions.numDimensions(); ++d)
 			fftDimensions[d] =
-				paddedDimensions[d] = (int) inputDimensions.dimension(d);
+				paddedDimensions[d] =
+					FftComplex.nfftSmall((int) inputDimensions.dimension(d));
 	}
 
 	/**
@@ -1381,7 +1326,7 @@ public class FFTMethods {
 	{
 		for (int d = 0; d < inputDimensions.numDimensions(); ++d)
 			paddedDimensions[d] =
-				NextSmoothNumber.nextSmooth((int) inputDimensions.dimension(d));
+				FftComplex.nfftFast((int) inputDimensions.dimension(d));
 	}
 
 	/**
@@ -1397,21 +1342,24 @@ public class FFTMethods {
 		final Dimensions inputDimensions, final long[] paddedDimensions)
 	{
 		for (int d = 0; d < inputDimensions.numDimensions(); ++d)
-			paddedDimensions[d] = (int) inputDimensions.dimension(d);
+			paddedDimensions[d] =
+				FftComplex.nfftSmall((int) inputDimensions.dimension(d));
 	}
 
 	final protected static boolean verifyRealToComplexfftDimensions(
 		final int inputSize, final int outputSize)
 	{
-		if (nfftFast(inputSize) / 2 + 1 == outputSize ||
-			nfftSmall(inputSize) / 2 + 1 == outputSize) return true;
+		if (FftReal.nfftFast(inputSize) / 2 + 1 == outputSize ||
+			FftReal.nfftSmall(inputSize) / 2 + 1 == outputSize) return true;
 		return false;
 	}
 
 	final protected static boolean verifyComplexToComplexfftDimensions(
 		final int inputSize, final int outputSize)
 	{
-		return true;
+		if (FftComplex.nfftFast(inputSize) == outputSize ||
+			FftComplex.nfftSmall(inputSize) == outputSize) return true;
+		return false;
 	}
 
 	final public static <T extends ComplexType<T>> void complexConjugate(
@@ -1419,36 +1367,5 @@ public class FFTMethods {
 	{
 		for (final T type : Views.iterable(complexData))
 			type.complexConjugate();
-	}
-
-	/**
-	 * Given a size computes the padded size that will result in the fastest
-	 * execution time. Only even sizes are currently supported
-	 * 
-	 * @param size
-	 * @return
-	 */
-	final private static int nfftFast(int size) {
-		int fastSize = NextSmoothNumber.nextSmooth(size);
-
-		while ((fastSize & 1) == 1) {
-			fastSize = NextSmoothNumber.nextSmooth((int) fastSize + 1);
-		}
-		return fastSize;
-	}
-
-	/**
-	 * Given a size computes the smallest supported padded size for fft. Only even
-	 * sizes are currently supported
-	 * 
-	 * @param size
-	 * @return
-	 */
-	final private static int nfftSmall(int size) {
-
-		if ((size & 1) == 1) {
-			return size + 1;
-		}
-		return size;
 	}
 }

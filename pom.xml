@@ -23,7 +23,7 @@
 		</repository>
 	</repositories>
 
-	<dependencies>
+	<dependencies> 
 		<!-- ImgLib2 dependencies -->
 		<dependency>
 			<groupId>net.imglib2</groupId>
@@ -32,11 +32,10 @@
 
 		<!-- Third-party dependencies -->
 		<dependency>
-			<groupId>edu.mines</groupId>
-			<artifactId>mines-jtk</artifactId>
-			<version>20100113</version>
+    		<groupId>com.github.wendykierp</groupId>
+    		<artifactId>JTransforms</artifactId>
+    		<version>3.0</version>
 		</dependency>
-
 		<!-- Test dependencies -->
 		<dependency>
 			<groupId>junit</groupId>
@@ -51,6 +50,12 @@
 		<dependency>
 			<groupId>net.imglib2</groupId>
 			<artifactId>imglib2-algorithm</artifactId>
+			<scope>test</scope>
+		</dependency>
+		<dependency>
+			<groupId>edu.mines</groupId>
+			<artifactId>mines-jtk</artifactId>
+			<version>20100113</version>
 			<scope>test</scope>
 		</dependency>
 	</dependencies>
