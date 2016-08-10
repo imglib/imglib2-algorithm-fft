@@ -55,7 +55,7 @@ import net.imglib2.view.Views;
  * complex-to-real for an entire dataset. Unfortunately only supports a maximal
  * size of INT in each dimension as the one-dimensional FFT is based on arrays.
  * 
- * @author Stephan Preibisch (stephan.preibisch@gmx.de)
+ * @author Stephan Preibisch
  */
 public class FFT
 {

@@ -60,7 +60,7 @@ import edu.mines.jtk.dsp.FftReal;
  * maximal size of INT in each dimension as the one-dimensional FFT is based on
  * arrays.
  * 
- * @author Stephan Preibisch (stephan.preibisch@gmx.de)
+ * @author Stephan Preibisch
  */
 public class FFTMethods {
 
