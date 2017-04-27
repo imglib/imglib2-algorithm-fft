@@ -193,7 +193,7 @@ public class FFTMethods {
 	 * @param scale - define if each pixel is divided by the sum of all pixels in
 	 *          the image
 	 * @param service - service providing threads for multi-threading (if numDims
-	 *          > 1)
+	 *          &gt; 1)
 	 * @return - true if successful, false if the dimensions of input and output
 	 *         are not compatible, i.e. not supported by the edu_mines_jtk 1d fft
 	 */
@@ -217,7 +217,7 @@ public class FFTMethods {
 	 * @param scale - define if each pixel is divided by the sum of all pixels in
 	 *          the image
 	 * @param service - service providing threads for multi-threading (if numDims
-	 *          > 1)
+	 *          &gt; 1)
 	 * @return - true if successful, false if the dimensions of input and output
 	 *         are not compatible, i.e. not supported by the edu_mines_jtk 1d fft
 	 */
@@ -558,7 +558,7 @@ public class FFTMethods {
 	 * @param scale - define if each pixel is divided by the sum of all pixels in
 	 *          the image
 	 * @param service - service providing threads for multi-threading (if numDims
-	 *          > 1)
+	 *          &gt; 1)
 	 * @return - true if successful, false if the dimensions of input and output
 	 *         are not compatible, i.e. not supported by the edu_mines_jtk 1d fft
 	 */
@@ -790,7 +790,7 @@ public class FFTMethods {
 	 * @param scale - define if each pixel is divided by the sum of all pixels in
 	 *          the image
 	 * @param service - service providing threads for multi-threading (if numDims
-	 *          > 1)
+	 *          &gt; 1)
 	 * @return - true if successful, false if the dimensionality of the dataset is
 	 *         not supported by the edu_mines_jtk 1d fft
 	 */
