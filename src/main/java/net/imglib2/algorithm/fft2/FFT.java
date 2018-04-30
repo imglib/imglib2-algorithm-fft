@@ -103,7 +103,7 @@ public class FFT
 		return ret;
 	}
 
-	final public static < R extends RealType< R >, C extends ComplexType< C > > Img< C > realToComplex( final RandomAccessible< R > input, Interval inputInterval, final ImgFactory< C > factory, final C type, final ExecutorService service )
+	final public static < R extends RealType< R >, C extends ComplexType< C > > Img< C > realToComplex( final RandomAccessible< R > input, Interval inputInterval, final ImgFactory< C > factory, final ExecutorService service )
 	{
 		// compute the size of the complex-valued output and the required
 		// padding
@@ -113,7 +113,7 @@ public class FFT
 		FFTMethods.dimensionsRealToComplexFast( inputInterval, paddedDimensions, fftDimensions );
 
 		// create the output Img
-		final Img< C > fft = factory.create( fftDimensions, type );
+		final Img< C > fft = factory.create( fftDimensions );
 
 		// if the input size is not the right size adjust the interval
 		if ( !FFTMethods.dimensionsEqual( inputInterval, paddedDimensions ) )
@@ -184,7 +184,7 @@ public class FFT
 		return ret;
 	}
 
-	final public static < C extends ComplexType< C >, R extends RealType< R > > Img< R > complexToReal( final RandomAccessible< C > input, Interval inputInterval, final Interval outputDimensions, final ImgFactory< R > factory, final R type, final ExecutorService service )
+	final public static < C extends ComplexType< C >, R extends RealType< R > > Img< R > complexToReal( final RandomAccessible< C > input, Interval inputInterval, final Interval outputDimensions, final ImgFactory< R > factory, final ExecutorService service )
 	{
 		final int numDimensions = input.numDimensions();
 
@@ -208,7 +208,7 @@ public class FFT
 		if ( outputDimensions == null )
 		{
 			// without cropping
-			final Img< R > output = factory.create( realDimensions, type );
+			final Img< R > output = factory.create( realDimensions );
 
 			for ( int d = numDimensions - 1; d > 0; --d )
 				FFTMethods.complexToComplex( fft, d, false );
@@ -218,7 +218,7 @@ public class FFT
 			return output;
 		}
 		// with cropping, computed based on the original size of the input image
-		final Img< R > output = factory.create( outputDimensions, type );
+		final Img< R > output = factory.create( outputDimensions );
 
 		for ( int d = numDimensions - 1; d > 0; --d )
 			FFTMethods.complexToComplex( fft, d, false, true, service );
@@ -323,4 +323,27 @@ public class FFT
 
 		FFTMethods.complexToReal( input, output, FFTMethods.unpaddingIntervalCentered( input, output ), 0, true, service );
 	}
+
+	/**
+	 * @deprecated Use
+	 *             {@link #realToComplex(RandomAccessible, Interval, ImgFactory, ExecutorService)}
+	 *             instead.
+	 */
+	@Deprecated
+	final public static < R extends RealType< R >, C extends ComplexType< C > > Img< C > realToComplex( final RandomAccessible< R > input, Interval inputInterval, final ImgFactory< C > factory, final C type, final ExecutorService service )
+	{
+		return realToComplex( input, inputInterval, factory.imgFactory( type ), service );
+	}
+
+	/**
+	 * @deprecated Use
+	 *             {@link #complexToReal(RandomAccessible, Interval,Interval, ImgFactory, ExecutorService)}
+	 *             instead.
+	 */
+	@Deprecated
+	final public static < C extends ComplexType< C >, R extends RealType< R > > Img< R > complexToReal( final RandomAccessible< C > input, Interval inputInterval, final Interval outputDimensions, final ImgFactory< R > factory, final R type, final ExecutorService service )
+	{
+		return complexToReal( input, inputInterval, outputDimensions, factory.imgFactory( type ), service );
+	}
+
 }

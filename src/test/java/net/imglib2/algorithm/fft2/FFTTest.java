@@ -68,8 +68,7 @@ public class FFTTest extends AbstractBenchmark {
 		for (int i = 40; i < 90; i++) {
 			long[] dim = new long[] { i, i, i };
 
-			Img<FloatType> input =
-				new ArrayImgFactory<FloatType>().create(dim, new FloatType());
+			Img< FloatType > input = new ArrayImgFactory< >( new FloatType() ).create( dim );
 			placeSphereInCenter(input);
 
 			ImgFactory<ComplexFloatType> fftImgFactory = null;
@@ -83,8 +82,7 @@ public class FFTTest extends AbstractBenchmark {
 
 			Img<ComplexFloatType> fft = FFT.realToComplex(input, fftImgFactory);
 
-			Img<FloatType> inverse =
-				input.factory().create(new FinalDimensions(dim), new FloatType());
+			Img< FloatType > inverse = input.factory().create( new FinalDimensions( dim ) );
 			FFT.complexToRealUnpad(fft, inverse);
 
 			assertImagesEqual(input, inverse, 0.00001f);
