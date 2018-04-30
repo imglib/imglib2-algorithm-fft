@@ -10,7 +10,7 @@
 	</parent>
 
 	<artifactId>imglib2-algorithm-fft</artifactId>
-	<version>0.2.0-SNAPSHOT</version>
+	<version>0.2.1-SNAPSHOT</version>
 
 	<name>ImgLib2 Algorithms: FFT</name>
 	<description>Image processing algorithms related to Fast Fourier Transforms.</description>
