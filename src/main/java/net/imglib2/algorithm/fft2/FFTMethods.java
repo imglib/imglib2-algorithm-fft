@@ -251,7 +251,7 @@ public class FFTMethods {
 		// perform the complex-to-real fft in a dimension multithreaded if more
 		// than one dimension exisits
 		if (numDimensions > 1) {
-			final ArrayList<Future<Void>> futures = new ArrayList<Future<Void>>();
+			final ArrayList< Future< Void > > futures = new ArrayList<>();
 			final AtomicInteger ai = new AtomicInteger(0);
 
 			for (int ithread = 0; ithread < numTasks; ++ithread) {
@@ -590,7 +590,7 @@ public class FFTMethods {
 		// perform the real-to-complex fft in a dimension multithreaded if more
 		// than one dimension exisits
 		if (numDimensions > 1) {
-			final ArrayList<Future<Void>> futures = new ArrayList<Future<Void>>();
+			final ArrayList< Future< Void > > futures = new ArrayList<>();
 			final AtomicInteger ai = new AtomicInteger(0);
 
 			for (int ithread = 0; ithread < numThreads; ++ithread) {
@@ -821,7 +821,7 @@ public class FFTMethods {
 		final int size = dataSize[dim];
 
 		if (numDimensions > 1) {
-			final ArrayList<Future<Void>> futures = new ArrayList<Future<Void>>();
+			final ArrayList< Future< Void > > futures = new ArrayList<>();
 			final AtomicInteger ai = new AtomicInteger(0);
 
 			for (int ithread = 0; ithread < numThreads; ++ithread) {
