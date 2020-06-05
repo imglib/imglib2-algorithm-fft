@@ -11,7 +11,7 @@
 
 	<groupId>net.imglib2</groupId>
 	<artifactId>imglib2-algorithm-fft</artifactId>
-	<version>0.2.1-SNAPSHOT</version>
+	<version>0.2.1</version>
 
 	<name>ImgLib2 Algorithms: FFT</name>
 	<description>Image processing algorithms related to Fast Fourier Transforms.</description>
@@ -38,7 +38,7 @@
 	<scm>
 		<connection>scm:git:git://github.com/imglib/imglib2-algorithm-fft</connection>
 		<developerConnection>scm:git:git@github.com:imglib/imglib2-algorithm-fft</developerConnection>
-		<tag>HEAD</tag>
+		<tag>imglib2-algorithm-fft-0.2.1</tag>
 		<url>https://github.com/imglib/imglib2-algorithm-fft</url>
 	</scm>
 	<issueManagement>
