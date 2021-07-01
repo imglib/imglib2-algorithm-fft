@@ -1,2 +1,2 @@
-[![](https://travis-ci.org/imglib/imglib2-algorithm-fft.svg?branch=master)](https://travis-ci.org/imglib/imglib2-algorithm-fft)
+[![](https://github.com/imglib/imglib2-algorithm-fft/actions/workflows/build-main.yml/badge.svg)](https://github.com/imglib/imglib2-algorithm-fft/actions/workflows/build-main.yml)
 
